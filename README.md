@@ -17,4 +17,4 @@ Para recrear el ambiente con conda
 * Crear Repositorio
 * Investigar la librería NetworkX
 * Investigar Beta Skeleton
-* Reisar traingulación Delaunay
+* Revisar traingulación Delaunay
