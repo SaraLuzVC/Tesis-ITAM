@@ -33,7 +33,7 @@ def plot_points(coords, names):
         force_text=0.5,
         force_points=0.2,
     )
-
+    plt.savefig('my_plot.jpg')
     plt.show()
 
 
@@ -106,6 +106,7 @@ def plot_beta_tangent_circles(coords, names, i, j, beta=1.0):
     ax.axis("equal")
     ax.grid(True)
     ax.legend()
+    plt.savefig('my_plot.jpg')
     plt.show()
 
 
@@ -181,6 +182,7 @@ def plot_beta_lunes_for_node(coords, names, i, beta=1.0):
         ax.axis("equal")
         ax.grid(True)
         ax.legend()
+        plt.savefig('my_plot.jpg')
         plt.show()
 
 
@@ -269,6 +271,7 @@ def plot_beta_skeleton_graph(coords, names, beta=1.0):
     plt.title(f"Gráfica β-esqueleto (β = {beta})")
     plt.grid(True)
     plt.axis("equal")
+    plt.savefig('my_plot.jpg')
     plt.show()
 
 ################################## Naive
