@@ -564,38 +564,69 @@ def circle_y_bounds_at_x(circle, x0):
     return cy - h, cy + h
 
 
-def satisfies(cond, x, y, circles):
-    """
-    Verifica si el punto (x,y) satisface:
-      - pertenecer a todos los círculos en cond['in']
-      - NO pertenecer a todos los círculos en cond['out']
-      - cumplir todas las desigualdades de cond['ineq'] respecto a y_low/y_high a x
-    """
-    # 1) Debe estar dentro de todos los 'in'
+# def satisfies(cond, x, y, circles):
+#     """
+#     Verifica si el punto (x,y) satisface:
+#       - pertenecer a todos los círculos en cond['in']
+#       - NO pertenecer a todos los círculos en cond['out']
+#       - cumplir todas las desigualdades de cond['ineq'] respecto a y_low/y_high a x
+#     """
+#     # 1) Debe estar dentro de todos los 'in'
+#     for cid in cond.get("in", set()):
+#         (cx, cy), r = circles[cid - 1]
+#         print("Reviso si SÍ está en el círculo ", cid, " el punto (", x, ",", y, ")")
+#         if not in_circle(x, y, cx, cy, r):
+#             return False
+
+#     # 2) Debe estar fuera de todos los 'out'
+#     for cid in cond.get("out", set()):
+#         (cx, cy), r = circles[cid - 1]
+#         print("Reviso si NO está en el círculo ", cid, " el punto (", x, ",", y, ")")
+#         if in_circle(x, y, cx, cy, r):
+#             return False
+
+#     # 3) Debe satisfacer cada inecuación simbólica respecto a y_low/y_high
+#     for var, op, (cid, which) in cond.get("ineq", []):
+#         y_low, y_high = circle_y_bounds_at_x(circles[cid - 1], x)
+#         print("Evaluo yhigh y ylow", y_high, y_low)
+#         if y_low is None:
+#             # si x no corta al círculo, la desigualdad no es aplicable: fallar conservadoramente
+#             return False
+#         y_ref = y_low if which == "y_low" else y_high
+#         if op == "<" and not (y < y_ref):
+#             return False
+#         if op == ">" and not (y > y_ref):
+#             return False
+
+#     return True
+
+
+def satisfies(cond, x, y, circles, tol_in=1e-12, tol_out=1e-12):
+    # 1) inside checks (inclusive with tolerance)
     for cid in cond.get("in", set()):
         (cx, cy), r = circles[cid - 1]
-        print("Reviso si SÍ está en el círculo ", cid, " el punto (", x, ",", y, ")")
-        if not in_circle(x, y, cx, cy, r):
+        if (x - cx) ** 2 + (y - cy) ** 2 > r * r + tol_in:
             return False
 
-    # 2) Debe estar fuera de todos los 'out'
-    for cid in cond.get("out", set()):
-        (cx, cy), r = circles[cid - 1]
-        print("Reviso si NO está en el círculo ", cid, " el punto (", x, ",", y, ")")
-        if in_circle(x, y, cx, cy, r):
-            return False
-
-    # 3) Debe satisfacer cada inecuación simbólica respecto a y_low/y_high
+    # 2) inequalities (treat boundary as OK with a small tolerance)
+    forced_out = set()
     for var, op, (cid, which) in cond.get("ineq", []):
         y_low, y_high = circle_y_bounds_at_x(circles[cid - 1], x)
-        print("Evaluo yhigh y ylow", y_high, y_low)
         if y_low is None:
-            # si x no corta al círculo, la desigualdad no es aplicable: fallar conservadoramente
             return False
         y_ref = y_low if which == "y_low" else y_high
-        if op == "<" and not (y < y_ref):
+        if op == "<" and not (y < y_ref + tol_out):
             return False
-        if op == ">" and not (y > y_ref):
+        if op == ">" and not (y > y_ref - tol_out):
+            return False
+        forced_out.add(cid)  # this inequality already enforces "out" for cid
+
+    # 3) outside checks (STRICT): boundary counts as OUT
+    for cid in cond.get("out", set()):
+        if cid in forced_out:
+            continue  # inequality already guarantees "out"
+        (cx, cy), r = circles[cid - 1]
+        if (x - cx) ** 2 + (y - cy) ** 2 < r * r - tol_out:
             return False
 
     return True
@@ -1278,9 +1309,14 @@ def enqueue_intersections_from_ids(
     """
     new_events = intersections_from_ids(ids_list, circles)
 
+    # if sweepL is not None and "x" in sweepL:
+    #     cutoff = sweepL["x"] + eps
+    #     new_events = [ev for ev in new_events if ev[0] > cutoff]
+    
     if sweepL is not None and "x" in sweepL:
-        cutoff = sweepL["x"] + eps
-        new_events = [ev for ev in new_events if ev[0] > cutoff]
+        x0 = sweepL["x"]
+        # keep future events OR same-x events (within tolerance)
+        new_events = [ev for ev in new_events if ev[0] > x0 + eps or abs(ev[0] - x0) <= eps]
 
     try:
         add_unique_events(Q, new_events, tol=tol, keep_sorted=keep_sorted)
