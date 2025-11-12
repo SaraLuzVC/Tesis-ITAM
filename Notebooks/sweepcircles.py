@@ -38,7 +38,7 @@ import copy
 # ————————————————————————————————————————————————————————————————
 
 
-def algoritmo(circles, points):
+def sweep_circles(circles, points, debug=False):
     """
     Bucle principal del algoritmo:
     - Construye Q con eventos iniciales (input + extremos izquierdos).
@@ -79,12 +79,13 @@ def algoritmo(circles, points):
     }
 
     # — Log de estado inicial —
-    print("Antes de iniciar:")
-    print_Q(Q, label="Q")
-    print_sweepL(sweepL, label="Línea de barrido =")
-    print("Ac (matriz):")
-    for row in Ac:
-        print(row)
+    if debug:
+        print("Antes de iniciar:")
+        print_Q(Q, label="Q")
+        print_sweepL(sweepL, label="Línea de barrido =")
+        print("Ac (matriz):")
+        for row in Ac:
+            print(row)
 
     # — Recorre la lista de eventos Q —
     i = 0
@@ -96,48 +97,54 @@ def algoritmo(circles, points):
 
         # 1) Evento de punto de entrada
         if kind == "input":
-            print(f"#####     Point ({x}, {y}) is an INPUT point     #####")
+            if debug:
+                print(f"#####     Point ({x}, {y}) is an INPUT point     #####")
             Ac = input_point(sweepL, Ac, circles, Q[i])
 
         # 2) Extremo izquierdo de un círculo
         elif kind == "left":
             circle_idx = list(idx)[0]
-            print(
-                f"#####     Point ({x}, {y}) is a LEFT endpoint of circle {idx}     #####"
-            )
+            if debug:
+                print(
+                    f"#####     Point ({x}, {y}) is a LEFT endpoint of circle {idx}     #####"
+                )
             Q, sweepL = leftend_point(
-                Q, sweepL, circle_id=circle_idx, circles=circles, eps=1e-6
+                Q, sweepL, circle_id=circle_idx, circles=circles, eps=1e-6, debug=debug
             )
 
         # 3) Extremo derecho de un círculo
         elif kind == "right":
             circle_idx = list(idx)[0]
-            print(
-                f"#####     Point ({x}, {y}) is a RIGHT endpoint of circle {idx}     #####"
-            )
+            if debug:
+                print(
+                    f"#####     Point ({x}, {y}) is a RIGHT endpoint of circle {idx}     #####"
+                )
             Q, sweepL = rightend_point(
-                Q, sweepL, circle_id=circle_idx, circles=circles, eps=1e-6
+                Q, sweepL, circle_id=circle_idx, circles=circles, eps=1e-6, debug=debug
             )
 
         # 4) Intersección entre dos círculos
         elif kind == "intersection":
             ids_set = set(idx)
-            print(
-                f"#####     Point ({x}, {y}) is an INTERSECTION point of circles {ids_set}     #####"
-            )
-            Q, sweepL = intersection_point(Q, sweepL, circles, ids_set, x, y, eps=1e-6)
+            if debug:
+                print(
+                    f"#####     Point ({x}, {y}) is an INTERSECTION point of circles {ids_set}     #####"
+                )
+            Q, sweepL = intersection_point(Q, sweepL, circles, ids_set, x, y, eps=1e-6, debug=debug)
 
         # (opcional) logging
-        print_Q(Q, label="Q")
-        print_sweepL(sweepL, label="Línea de barrido =")
+        if debug:
+            print_Q(Q, label="Q")
+            print_sweepL(sweepL, label="Línea de barrido =")
         i += 1
 
     # — Log de salida —
-    print("Ac (final):")
-    for row in Ac:
-        print(row)
+    if debug:
+        print("Ac (final):")
+        for row in Ac:
+            print(row)
 
-    return Ac, Q, sweepL
+    return Ac
 
 
 # ————————————————————————————————————————————————————————————————
@@ -187,6 +194,7 @@ def order_Q(Q, circles, kind_priority=None):
          - si ambos son 'intersection' en el mismo x: se usa y y luego los IDs
          - en los demás casos: y ascendente
     """
+    # SARA: revisa si seria mejor left, right, intersection_open, input, intersection out????
     default_priority = {"right": 0, "left": 1, "intersection": 2, "input": 3}
     if not isinstance(kind_priority, dict):
         kind_priority = default_priority
@@ -214,7 +222,7 @@ def order_Q(Q, circles, kind_priority=None):
     Q.sort(key=key)
     return Q
 
-
+##### SARA: Necesitamos esta????
 def event_in_Q(Q, event, tol=1e-9):
     """
     True si ya existe en Q un evento con mismo tipo e ids y con (x,y) a distancia <= tol.
@@ -230,7 +238,7 @@ def event_in_Q(Q, event, tol=1e-9):
             return True
     return False
 
-
+# SARA: Mismo comentario que arriba
 def add_unique_events(Q, nuevos_eventos, tol=1e-9, keep_sorted=True):
     """
     Agrega a Q los eventos (x, y, "intersection", {i,j}) de `nuevos_eventos` que no existan ya.
@@ -637,7 +645,7 @@ def satisfies(cond, x, y, circles, tol_in=1e-12, tol_out=1e-12):
 # ————————————————————————————————————————————————————————————————
 
 
-def leftend_point(Q, sweepL, circle_id, circles, eps=1e-6):
+def leftend_point(Q, sweepL, circle_id, circles, eps=1e-6, debug=False):
     """
     Inserta el círculo `circle_id` en el modelo de condiciones en x = sweepL['x'].
     Divide la banda base en: down / middle / up para ese círculo y encola posibles
@@ -645,7 +653,8 @@ def leftend_point(Q, sweepL, circle_id, circles, eps=1e-6):
     derecho en Q y reordena Q.
     """
     (cx, cy), r = circles[circle_id - 1]
-    print("Círculo izquierdo con centro en (", cx, ",", cy, ") y radio ", r)
+    if debug:
+        print("Círculo izquierdo con centro en (", cx, ",", cy, ") y radio ", r)
 
     # Evalúa justo a la derecha del extremo izquierdo para cortar bandas de forma estable.
     x_prime = sweepL["x"] + eps
@@ -656,7 +665,8 @@ def leftend_point(Q, sweepL, circle_id, circles, eps=1e-6):
         return Q, sweepL
 
     conds = sweepL["conditions"]
-    print("Conditions", sweepL)
+    if debug:
+        print("Conditions", sweepL)
 
     # Encuentra banda base que contiene (x', cy) ANTES de insertar el círculo
     k = None
@@ -668,7 +678,8 @@ def leftend_point(Q, sweepL, circle_id, circles, eps=1e-6):
         k = len(conds) - 1  # fallback conservador
 
     base = conds[k]
-    print("base", base)
+    if debug:
+        print("base", base)
     base_in = set(base.get("in", set()))
     base_out = set(base.get("out", set()))
     base_ineq = list(base.get("ineq", []))
@@ -690,9 +701,10 @@ def leftend_point(Q, sweepL, circle_id, circles, eps=1e-6):
         "ineq": base_ineq + [("y", ">", (circle_id, "y_high"))],
     }
 
-    print("down", down)
-    print("middle", middle)
-    print("up", up)
+    if debug:
+        print("down", down)
+        print("middle", middle)
+        print("up", up)
 
     # Reemplaza banda base por down/middle/up
     new_conds = conds[:k] + [down, middle, up] + conds[k + 1 :]
@@ -707,7 +719,8 @@ def leftend_point(Q, sweepL, circle_id, circles, eps=1e-6):
     circles_nearby = collect_circles_from_neighbors(
         ids, kb_down, kb_up, sweepL["conditions"]
     )
-    print("check intersections in circles", circles_nearby)
+    if debug:
+        print("check intersections in circles", circles_nearby)
     Q = enqueue_intersections_from_ids(
         Q, circles, circles_nearby, sweepL=sweepL, eps=1e-9, keep_sorted=True, tol=1e-9
     )
@@ -755,7 +768,7 @@ def circle_circle_intersections(c1, c2, tol=1e-12):
     return [(xm + rx, ym + ry), (xm - rx, ym - ry)]
 
 
-def rightend_point(Q, sweepL, circle_id, circles, eps=1e-6):
+def rightend_point(Q, sweepL, circle_id, circles, eps=1e-6, debug=False):
     """
     Procesa el extremo derecho de `circle_id` en x.
     - Localiza 'middle' (banda con circle_id en 'in') que contiene (x - eps, cy)
@@ -765,7 +778,8 @@ def rightend_point(Q, sweepL, circle_id, circles, eps=1e-6):
     - NO agrega evento 'right' adicional a Q (ya estaba en Q desde left)
     """
     (cx, cy), r = circles[circle_id - 1]
-    print("Círculo derecho con centro en (", cx, ",", cy, ") y radio ", r)
+    if debug:
+        print("Círculo derecho con centro en (", cx, ",", cy, ") y radio ", r)
 
     x_prime = sweepL["x"] - eps  # evalúa justo antes del extremo derecho
     conds = sweepL["conditions"]
@@ -780,8 +794,11 @@ def rightend_point(Q, sweepL, circle_id, circles, eps=1e-6):
     if k is None:
         sweepL.setdefault("active", set()).discard(circle_id)
         print(
-            "No se encontró región con el círculo en 'in' para (x', cy); no se fusiona."
+            "No se encontró región con el círculo en 'in' para (x', cy); no se fusiona.",
+            cx,cy,r,circle_id
         )
+        # print_Q(Q, label="Q")
+        # print_sweepL(sweepL, label="Línea de barrido =")
         return Q, sweepL
 
     # Deben existir vecinos arriba y abajo
@@ -791,9 +808,10 @@ def rightend_point(Q, sweepL, circle_id, circles, eps=1e-6):
         return Q, sweepL
 
     down, mid, up = conds[k - 1], conds[k], conds[k + 1]
-    print("down", down)
-    print("middle", mid)
-    print("up", up)
+    if debug:
+        print("down", down)
+        print("middle", mid)
+        print("up", up)
 
     # Fusiona up y down, purgando desigualdades del círculo que cierra
     def _sin_ineq_del_circulo(ineqs, cid):
@@ -819,7 +837,8 @@ def rightend_point(Q, sweepL, circle_id, circles, eps=1e-6):
             base_ineq.append(t)
 
     merged = {"in": base_in, "out": base_out, "ineq": base_ineq}
-    print("merged", merged)
+    if debug:
+        print("merged", merged)
 
     # Reemplaza [down, middle, up] por [merged]
     sweepL["conditions"] = conds[: k - 1] + [merged] + conds[k + 2 :]
@@ -896,7 +915,7 @@ def input_point(sweepL, Ac, circles, q, eps=1e-9):
 # ————————————————————————————————————————————————————————————————
 
 
-def intersection_point(Q, sweepL, circles, ids, x, y, eps=1e-6):
+def intersection_point(Q, sweepL, circles, ids, x, y, eps=1e-6, debug=False):
     """
     Maneja un evento de intersección (x,y) entre los dos círculos en `ids`.
     - Localiza las bandas 'down' y 'up' justo antes de la intersección.
@@ -919,37 +938,52 @@ def intersection_point(Q, sweepL, circles, ids, x, y, eps=1e-6):
     x_before, x_after, dy, y_up, y_up2 = adaptive_probes_for_intersection(
         x, y, ids, circles
     )
-
-    print("REGIONES ANTES")
-    print("*********DOWN")
+    if debug:
+        print("REGIONES ANTES")
+        print("*********DOWN")
     kb_down = find_condition_index_at_from_subset_safe(
         x_before, y - dy, circles, conds, subset
     )
-    print(
-        "before down",
-        kb_down,
-        (
-            conds[kb_down]
-            if kb_down is not None and 0 <= kb_down < len(conds)
-            else "(no exact match)"
-        ),
-    )
+    if debug:
+        print(
+            "before down",
+            kb_down,
+            (
+                conds[kb_down]
+                if kb_down is not None and 0 <= kb_down < len(conds)
+                else "(no exact match)"
+            ),
+        )
 
-    print("*******UP")
+        print("*******UP")
     kb_up = find_condition_index_at_from_subset_safe(
         x_before, y_up, circles, conds, subset
     )
-    print(
-        "before up",
-        kb_up,
-        (
-            conds[kb_up]
-            if kb_up is not None and 0 <= kb_up < len(conds)
-            else "(no exact match)"
-        ),
-    )
+    if debug:
+        print(
+            "before up",
+            kb_up,
+            (
+                conds[kb_up]
+                if kb_up is not None and 0 <= kb_up < len(conds)
+                else "(no exact match)"
+            ),
+        )
 
-    print("************MIDDLE")
+        print("************MIDDLE")
+
+    # # --- NUEVO FALLBACK ---
+    # if kb_down is not None and kb_up is not None and kb_down == kb_up:
+    #     # intenta forzar separación buscando la siguiente banda diferente
+    #     alt_up = _first_different_band(conds, kb_up, ids, direction=+1)
+    #     alt_down = _first_different_band(conds, kb_down, ids, direction=-1)
+
+    #     if alt_up is not None:
+    #         kb_up = alt_up
+    #     elif alt_down is not None:
+    #         kb_down = alt_down
+    # # --- NUEVO FALLBACK ---
+
     kb_middle = pick_middle_index_between(conds, kb_down, kb_up, ids)
     if kb_middle is None:
         # fallback: usar segunda sonda hacia arriba o y exacta
@@ -960,9 +994,10 @@ def intersection_point(Q, sweepL, circles, ids, x, y, eps=1e-6):
             kb_middle = find_condition_index_at_from_subset_safe(
                 x_before, y, circles, conds, subset
             )
-    print("before middle", kb_middle, conds[kb_middle])
+    if debug:
+        print("before middle", kb_middle, conds[kb_middle])
 
-    print("REGIONES DESPUES")
+        print("REGIONES DESPUES")
     # Por definición: up y down se conservan; solo se reconstruye middle
     ka_down = kb_down
     ka_up = kb_up
@@ -972,19 +1007,35 @@ def intersection_point(Q, sweepL, circles, ids, x, y, eps=1e-6):
         conds, kb_middle, ids, x_after, y, circles, eps
     )
     conds[kb_middle] = middle_after
-    print(middle_after)
+    if debug:
+        print(middle_after)
 
     # Encolar intersecciones derivadas en vecinos y reordenar Q
     circles_nearby = collect_circles_from_neighbors(
         ids, kb_down, kb_up, sweepL["conditions"]
     )
-    print("check intersections in circles", circles_nearby)
+    if debug:
+        print("check intersections in circles", circles_nearby)
     Q = enqueue_intersections_from_ids(
         Q, circles, circles_nearby, sweepL=sweepL, eps=1e-9, keep_sorted=True, tol=1e-9
     )
     order_Q(Q, circles)
 
     return Q, sweepL
+
+
+# def _first_different_band(conds, start_idx, ids, direction=+1):
+#     """
+#     Desde start_idx, camina hacia 'direction' y devuelve el primer índice cuya
+#     clasificación vs {i,j} cambie (p.ej., de 'one_inside' a 'between' o 'inside_both').
+#     """
+#     base = _cond_class_vs_ids(conds[start_idx], ids)
+#     i = start_idx + direction
+#     while 0 <= i < len(conds):
+#         if _cond_class_vs_ids(conds[i], ids) != base:
+#             return i
+#         i += direction
+#     return None
 
 
 def rebuild_middle_after_by_flip(conds, kb_middle, ids, x_after, y, circles, eps=1e-9):
@@ -1100,6 +1151,116 @@ def pick_conditions_for_ids(ids, sweepL):
     return [conds[k] for k in idx_sel], idx_sel
 
 
+# def find_condition_index_at_from_subset_safe(x, y, circles, conds, subset, tol=1e-12):
+#     """
+#     Exact phase: pick the first band that
+#       (A) decides every cid in `subset` (either in, out, or implied-out by an inequality),
+#       (B) those decisions match the true classification at (x,y),
+#       (C) and *all* of its inequalities hold at (x,y).
+
+#     Fallback: score all bands; penalize mismatch, undecided subset IDs, and failed inequalities.
+#     """
+#     ins_sub, out_sub = _classify_inside_outside(x, y, circles, subset, tol)
+
+#     def ineq_implies_out(c, cid):
+#         """Return True if band c has an inequality for cid that holds at (x,y) and implies OUT."""
+#         for _v, op, (ccid, which) in c.get("ineq", []):
+#             if ccid != cid:
+#                 continue
+#             # If the inequality is satisfied, it forces the point to be below y_low or above y_high → OUT.
+#             if _ineq_holds(y, op, cid, which, x, circles, tol):
+#                 # Only '< y_low' or '> y_high' actually mean OUT; <=/>= treated same with tol in _ineq_holds.
+#                 if which == "y_low" and op in ("<", "<="):
+#                     return True
+#                 if which == "y_high" and op in (">", ">="):
+#                     return True
+#         return False
+
+#     # 1) Exact-match phase
+#     for i, c in enumerate(conds):
+#         # (C) ALL inequalities in the band must hold at (x,y)
+#         ok_ineqs = True
+#         for _v, op, (cid_i, which) in c.get("ineq", []):
+#             if not _ineq_holds(y, op, cid_i, which, x, circles, tol):
+#                 ok_ineqs = False
+#                 break
+#         if not ok_ineqs:
+#             continue
+
+#         # (A) The band must DECIDE every cid in subset
+#         decided_in = set()
+#         decided_out = set()
+#         undecided = set()
+
+#         for cid in subset:
+#             if cid in c.get("in", ()):
+#                 decided_in.add(cid)
+#             elif cid in c.get("out", ()):
+#                 decided_out.add(cid)
+#             elif ineq_implies_out(c, cid):
+#                 decided_out.add(cid)
+#             else:
+#                 undecided.add(cid)
+
+#         if undecided:
+#             continue  # band doesn’t talk about all subset IDs → skip exact
+
+#         # (B) Those decisions must match truth at (x,y)
+#         if not (decided_in <= ins_sub):
+#             continue
+#         if not (decided_out <= out_sub):
+#             continue
+
+#         # Passed all checks → exact match
+#         return i
+
+#     # 2) Fallback scoring
+#     all_ids = set()
+#     for c in conds:
+#         all_ids |= (
+#             c["in"] | c["out"] | {cid for (_v, _op, (cid, _w)) in c.get("ineq", [])}
+#         )
+#     ins_all, out_all = _classify_inside_outside(x, y, circles, all_ids, tol)
+
+#     best_i, best_score = None, float("inf")
+#     for i, c in enumerate(conds):
+#         score = 0
+
+#         # Penalize mismatch vs truth for all ids mentioned by the band
+#         score += len(c["in"] - ins_all)
+#         score += len(c["out"] - out_all)
+
+#         # Inequalities: if they fail, penalize heavily; if they pass but don't imply OUT correctly, mild penalty.
+#         for _v, op, (cid, which) in c.get("ineq", []):
+#             yl, yh = _circle_y_band(circles, cid, x)
+#             if yl is None:
+#                 score += 3  # circle not present at this x
+#                 continue
+#             target = yl if which == "y_low" else yh
+#             ok = _ineq_holds(y, op, cid, which, x, circles, tol)
+#             if not ok:
+#                 score += 2 + abs(y - target)
+#             # (optional) small bias to prefer bands whose inequalities imply correct OUT/IN
+#             # If inequality implies OUT but truth says IN, add a penalty
+#             if which == "y_low" and op in ("<", "<=") and cid in ins_all and ok:
+#                 score += 1
+#             if which == "y_high" and op in (">", ">=") and cid in ins_all and ok:
+#                 score += 1
+
+#         # Penalize bands that leave subset IDs undecided
+#         subset_ids_mentioned = (
+#             c["in"] | c["out"] | {cid for (_v, _op, (cid, _w)) in c.get("ineq", [])}
+#         )
+#         undecided_subset = subset - subset_ids_mentioned
+#         if undecided_subset:
+#             score += 1.5 * len(undecided_subset)
+
+#         if score < best_score:
+#             best_score, best_i = score, i
+
+#     return best_i
+
+
 def find_condition_index_at_from_subset_safe(x, y, circles, conds, subset, tol=1e-12):
     """
     Encuentra el índice de la primera banda en `conds` que sea consistente con:
@@ -1110,6 +1271,8 @@ def find_condition_index_at_from_subset_safe(x, y, circles, conds, subset, tol=1
     """
     # 1) match exacto con subset
     ins_sub, out_sub = _classify_inside_outside(x, y, circles, subset, tol)
+    # print(ins_sub)
+    # print(out_sub)
     candidates = []
     for i, c in enumerate(conds):
         if not (c["in"] & subset <= ins_sub):  # requiere estar dentro y no lo está
@@ -1471,3 +1634,57 @@ def adaptive_probes_for_intersection(
     y_up2 = y + min(2.0 * dy, 0.9 * min(clears))  # deja margen del arco
 
     return x_before, x_after, dy, y_up, y_up2
+
+
+# def adaptive_probes_for_intersection(
+#     x, y, ids, circles, x_eps_min=1e-9, x_eps_scale=1e-12, guard=1e-4
+# ):
+#     """
+#     Sondas robustas:
+#       - x_before, x_after: a ambos lados de x con epsilon escalado.
+#       - y_down: justo por debajo del mayor y_low de ambos círculos en x_before.
+#       - y_up:   justo por encima del menor y_high de ambos círculos en x_before.
+#     Esto garantiza caer en bandas distintas alrededor del punto de cruce.
+#     """
+#     import math
+
+#     max_r = max(circles[cid - 1][1] for cid in ids)
+#     epsx = max(x_eps_min, x_eps_scale * (abs(x) + max_r))
+#     x_before = x - epsx
+#     x_after = x + epsx
+
+#     yl_list, yh_list = [], []
+#     for cid in sorted(ids):
+#         yl, yh = _safe_circle_band_at_x(circles[cid - 1], x_before)
+#         if yl is None:
+#             # si en x_before alguno no corta (muy degenerado), usa x_after
+#             yl, yh = _safe_circle_band_at_x(circles[cid - 1], x_after)
+#         if yl is not None:
+#             yl_list.append(yl)
+#             yh_list.append(yh)
+
+#     # fallback si algo raro
+#     if not yl_list:
+#         # vuelve a tu esquema original: pequeño dy simétrico
+#         dy = max(guard, 10 * epsx)
+#         return x_before, x_after, dy, y + dy, y + 2 * dy
+
+#     # Orden vertical de bandas de ambos círculos
+#     top_low = max(yl_list)  # el límite inferior "más alto"
+#     bot_high = min(yh_list)  # el límite superior "más bajo"
+
+#     # Queremos elegir sondas que separen claramente:
+#     #   y_down < top_low  < intersección < bot_high < y_up
+#     # Añadimos un margen de seguridad 'guard'
+#     y_down = top_low - max(guard, 10 * epsx)
+#     y_up = bot_high + max(guard, 10 * epsx)
+
+#     # 'dy' para tu interfaz anterior (no lo usa ya, pero lo devolvemos)
+#     dy = max(abs(y - y_down), abs(y_up - y))
+#     return (
+#         x_before,
+#         x_after,
+#         dy,
+#         y_up,
+#         y + min(2 * dy, (bot_high - top_low) if bot_high > top_low else dy),
+#     )
