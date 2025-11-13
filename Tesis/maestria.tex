@@ -1,0 +1,134 @@
+\documentclass[10pt,twoside,openright]{book}
+
+\usepackage[papersize={170mm,225mm},
+   margin=20mm,
+   includehead,
+   includefoot]{geometry}
+
+\usepackage[%
+	pagebackref=true,
+	citecolor=blue,
+	linkcolor=blue,
+	colorlinks=true,
+	urlcolor=cyan,
+	pdfborder={0 0 0}
+	]{hyperref}
+
+% Use utf-8 encoding for foreign characters
+\usepackage[utf8]{inputenc}
+% Use the explicit language name to avoid babel option lookup problems
+\usepackage[spanish]{babel}
+
+\usepackage{amsthm, amssymb, amsmath}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepackage{enumitem}
+\usepackage{mathtools}
+
+\usepackage[numbers]{natbib}
+% Completa en texto loss elementos de referencia
+\usepackage[capitalize]{cleveref}
+% Muestra los identificadores de ecuaciones y referencias
+\usepackage[notref,notcite,color]{showkeys}
+
+\usepackage{lipsum}
+
+
+% Style theme  -----------------------------------------------------------------
+% \usepackage[Sonny]{fncychap}  %Sonny, Lenny, Glenn, Conny, Rejne and Bjarne
+% Las siguientes lineas son necesarias pues las opciones de \sf y \bf ya no
+% tienen soporte en KOMA.
+% \ChTitleVar{\bfseries\Large\rmfamily}
+% \ChNameVar{\bfseries\Large\sffamily}
+
+%  Definición de bloques -------------------------------------------------------
+\newtheorem{theorem}{Teorema}
+\newtheorem{corollary}{Corolario}
+\newtheorem{definition}{Definición}
+\newtheorem{lemma}{Lema}
+\newtheorem{exercise}{Exercise}
+\newtheorem{remark}{Nota}
+\newtheorem{example}{Example}
+\newtheorem{warning}{Warning}
+\newtheorem{proposition}[theorem]{Proposición}
+
+% Definición de variables ------------------------------------------------------
+
+\newcommand{\N}{\mathsf{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\G}{\mathcal{G}}
+\newcommand{\R}{\mathbb{R}}
+\def\grad{ \mbox{grad}}
+\def\curl{ \mbox{curl}}
+\def\div{ \mbox{div}}
+\def\U{\ensuremath {\cal U}}
+\def\S{\ensuremath {\cal S}}
+\def\V{\ensuremath {\cal V}}
+\def\R{\ensuremath {\cal R}}
+\def\tr{\ensuremath {\mbox{tr}}}
+
+\graphicspath{{./imagenes/}}
+
+% Título y autor ---------------------------------------------------------------
+\title{Titulo del trabajo}
+\author{Sara Luz Valenzuela Camacho}
+\date{}
+
+% Esqueleto del documento ------------------------------------------------------
+\begin{document}
+
+% Primero lo portada
+\include{./capitulos/title}
+\include{./capitulos/declaracion}
+
+%% Dedicatoria
+\newpage
+\thispagestyle{empty}
+$\,$
+\vspace{5.7cm}
+\begin{flushright}
+{\em {\Large Dedicatoria}}
+\end{flushright}
+\clearpage
+
+\thispagestyle{empty}
+\section*{Agradecimientos}
+
+\noindent
+
+\maketitle
+\section*{Prólogo}
+
+En esta tesina se estudian $\ldots$.
+La estructura de este trabajo es el siguiente:
+
+\begin{enumerate}
+  \item {\bfseries Introducci\'on}.
+  \item[] {\bfseries $\vdots$}
+  \item[$n.$] {\bfseries Conclusiones}.
+\end{enumerate}
+
+\pagenumbering{arabic}
+\tableofcontents
+
+% Añade capítulos en orden
+\include{./capitulos/01_intro}
+\include{./capitulos/02_definiciones}
+\include{./capitulos/03_algoritmos}
+\include{./capitulos/04_modelos}
+\include{./capitulos/05_caso_practico}
+\include{./capitulos/06_conclusiones}
+
+% \appendix
+%\include{./capitulos/appendix}
+
+\include{./capitulos/bibliografia}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

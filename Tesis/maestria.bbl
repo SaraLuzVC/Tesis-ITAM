@@ -1,0 +1,45 @@
+\begin{thebibliography}{7}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[De~Finetti(1972)]{DeFinetti1972}
+B.~De~Finetti.
+\newblock \emph{Probability, Induction and Statistics: The Art of Guessing}.
+\newblock J. Wiley, 1972.
+\newblock ISBN 9780471201403.
+
+\bibitem[Gilboa(2009)]{Gilboa2009}
+Itzhak Gilboa.
+\newblock \emph{Theory of Decision Under Uncertainty}.
+\newblock {Cambridge University Press}, 2009.
+
+\bibitem[Halpern(2017)]{Halpern2017}
+Joseph~Y Halpern.
+\newblock \emph{{Reasoning About Uncertainty}}.
+\newblock {MIT Press}, 2017.
+
+\bibitem[Rao and Mukhopadhyay(2001)]{Rao2001}
+S.V. Rao and Asish Mukhopadhyay.
+\newblock Fast algorithms for computing $\beta$-skeletons and thier relatives.
+\newblock \emph{Pattern Recognition Society}, 34:\penalty0 2163--2172, 2001.
+
+\bibitem[Savage(1972)]{Savage1972}
+L.J. Savage.
+\newblock \emph{The Foundations of Statistics}.
+\newblock Dover Publications, 1972.
+\newblock ISBN 9780486623498.
+
+\bibitem[Straub et~al.(2016)Straub, Papaioannou, and Betz]{Straub2016}
+Daniel Straub, Iason Papaioannou, and Wolfgang Betz.
+\newblock Bayesian analysis of rare events.
+\newblock \emph{Journal of Computational Physics}, 314:\penalty0 538--556, 2016.
+
+\bibitem[Stuart and Teckentrup(2018)]{Stuart2018}
+Andrew Stuart and Aretha Teckentrup.
+\newblock Posterior consistency for {G}aussian process approximations of {B}ayesian posterior distributions.
+\newblock \emph{Mathematics of Computation}, 87\penalty0 (310):\penalty0 721--753, 2018.
+
+\end{thebibliography}

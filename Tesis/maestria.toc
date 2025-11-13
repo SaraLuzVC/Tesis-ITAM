@@ -1,0 +1,24 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {chapter}{\numberline {1}Introducción}{5}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Definiciones}{7}{chapter.2}%
+\contentsline {chapter}{\numberline {3}Algoritmos}{9}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Desigualdad del Triángulo}{9}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Delaunay}{9}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Línea de Barrido}{9}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Conjunto de Intersecciones}{9}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}El problema de los $n-\text {círculos}$ }{9}{subsection.3.3.2}%
+\contentsline {subsubsection}{Datos del ejemplo}{9}{section*.5}%
+\contentsline {subsubsection}{Inicialización}{10}{section*.6}%
+\contentsline {subsubsection}{Desarrollo}{14}{section*.7}%
+\contentsline {paragraph}{Paso 1: $\mathbf {x=0}$, Algoritmo de punto izquierdo}{17}{section*.8}%
+\contentsline {paragraph}{Paso 2: $x=1$, Algoritmo de punto izquierdo}{18}{section*.9}%
+\contentsline {paragraph}{Paso 3: $x=2.2224$, Algoritmo de punto de intersección}{20}{section*.10}%
+\contentsline {paragraph}{Paso 4: $\mathbf {x=2.5}$, Algoritmo de punto izquierdo}{22}{section*.11}%
+\contentsline {paragraph}{Paso 5: $\mathbf {x=3}$, Algoritmo de punto izquierdo}{23}{section*.12}%
+\contentsline {paragraph}{Paso 6: $x=3.6630$, Algoritmo de punto de intersección}{24}{section*.13}%
+\contentsline {paragraph}{Paso 7: $x=4.7917$, Algoritmo de punto de intersección}{26}{section*.14}%
+\contentsline {paragraph}{Paso 8: $\mathbf {x=5}$, Algoritmo de punto izquierdo}{28}{section*.15}%
+\contentsline {subsubsection}{Código en python}{29}{section*.16}%
+\contentsline {chapter}{\numberline {4}Modelos}{31}{chapter.4}%
+\contentsline {chapter}{\numberline {5}Caso Práctico}{33}{chapter.5}%
+\contentsline {chapter}{\numberline {6}Conclusiones}{35}{chapter.6}%

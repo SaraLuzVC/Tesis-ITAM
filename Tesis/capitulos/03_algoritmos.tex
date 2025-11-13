@@ -1,0 +1,1045 @@
+\chapter{Algoritmos}
+
+\section{Desigualdad del Triángulo}
+
+\section{Delaunay}
+
+\section{Línea de Barrido}
+
+\subsection{Conjunto de Intersecciones}
+
+\subsection{El problema de los $n-\text{círculos}$ }
+
+El problema de los $n-\text{círculos}$ dice lo siguiente:
+\begin{quote} 
+Dado un conjunto $C$ de $n$ círculos y un conjunto $P$ de $m$ puntos, 
+encontrar todos los círculos en $C$ que están vacíos.
+\end{quote}
+El algoritmo explicado en esta sección está tomado del artículo de 2001 de Rao y Mukhopadhyay \citep{Rao2001}.
+
+\subsubsection{Datos del ejemplo}
+
+Para definir a los $n$ círculos, vamos a usar la notación $c:((h,k),r)$, donde las coordenadas de su centro son $(h,k)$, y su radio $r$, tal que 
+
+\begin{equation}
+    c_{limit}={(x, y)\in \mathbb{R}^2:(x-h)^2+(y-k)^2=r^2}
+\end{equation}
+\begin{equation}
+    c_{fill}={(x, y)\in \mathbb{R}^2:(x-h)^2+(y-k)^2<r^2}
+\end{equation}
+\begin{equation}
+    c=c_{limit} \cup c_{fill}
+\end{equation}
+Para nuestro ejemplo tenemos 16 círculos y 6 puntos de entrada mostrados en la figura \ref{circles_data}, cuyos datos se muestran en la siguiente tabla:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Círculos} & \textbf{Puntos} \\
+\hline
+$c_1:((9.5, 30.5),3.5)$ & $p_1=(14, 30.5)$ \\
+$c_2:((11, 30.5),3.5)$ & $p_2=(9, 17)$ \\
+$c_3:((18, 24),5)$      & $p_3=(18, 20)$ \\
+$c_4:((4, 23),3)$       & $p_4=(28, 18)$ \\
+$c_5:((4, 17),4)$       & $p_5=(11, 5)$ \\
+$c_6:((7, 17),4.5)$     &   \\
+$c_7:((12.5,17),3)$     &   \\
+$c_8:((18, 15),6)$      &   \\
+$c_9:((27,19),3)$       &   \\
+$c_{10}:((30,17),3)$    &   \\
+$c_{11}:((4, 11),3)$    &   \\
+$c_{12}:((12, 9),2)$    &   \\
+$c_{13}:((16,9),3)$     &   \\
+$c_{14}:((6, 4),3)$     &   \\
+$c_{15}:((7.5, 4),2.5)$ &   \\
+$c_{16}:((18, 5),5)$    &   \\
+\hline
+\end{tabular}
+\caption{Datos de círculos y puntos}
+\end{table}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{imagenes/circles_01_data.pdf}
+    \caption{Datos del ejemplo del problema de los $n-\text{círculos}$ }
+    \label{circles_data}
+\end{figure}
+
+\subsubsection{Inicialización}
+
+Para nuestro caso los conjuntos $C$ y $P$ son:
+
+\begin{equation}
+    C = \{ c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}
+\end{equation}
+
+\begin{equation}
+    P = \{ p_1, p_2, p_3, p_4, p_5, p_6\}
+\end{equation}
+
+\begin{definition}
+El estado de línea de barrido $\mathcal{L}$ es un ordenamiento del conjunto de regiones $\Theta$ que atraviesa la línea vertical $x=a$. En donde, para dos regiones $r_i\in \Theta$ y $r_j\in \Theta$, se dice que $r_i <_a r_j$ si la intersección de la región $r_i$ con la línea vertical $x=a$ está por debajo de la intersección de la región $r_j$ con esa misma línea.
+\end{definition}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{imagenes/circles_02_regions.pdf}
+    \caption{Regiones en las que los 16 círculos dividen a $\mathbb{R}^2$ }
+    \label{circles_region}
+\end{figure}
+
+La figura \ref{circles_region} muestra las 35 zonas en las que los 16 círculos dividen $\mathbb{R}^2$, cabe notar que la región $r_1$ se compone de la siguiente manera:
+
+\begin{equation}
+    r_0={(x, y)\in \mathbb{R}^2: (x,y)\notin c_{fill}, c\in C}
+\end{equation}
+
+\begin{definition}
+Para cada región $r_i \in \mathcal{L}$, llamamos $C_{r_i}$ al conjunto de círculos activos que contienen esa región.
+\end{definition}
+
+Por definición, para nuestro ejemplo: $C_{r_1}=\emptyset$.
+
+\begin{definition}
+Un punto de evento $q$ puede ser:
+
+\begin{itemize}
+    \item un punto de entrada ($p_j$)
+    \item un punto de intersección entre dos círculos ($p_{int-a_{i,k}}, p_{int-b_{i,k}}$)
+    \item el punto más a la izquierda de un círculo (nos referiremos a ellos como puntos izquierdos, $p_{izq-c_i}$)
+    \item el punto más a la derecha de un círculo (nos referiremos a ellos como puntos derechos, $p_{der-c_i}$)
+\end{itemize}
+
+Estos eventos se mantienen en una fila de prioridad $Q$ que se inicializa con los puntos izquierdos y con los puntos de entrada.
+\end{definition}
+
+Con las definiciones anteriores, podemos inferir que para todo $x<p$, donde p es el primer punto en $Q$, 
+\begin{equation}
+\mathcal{L}={r_1}    
+\end{equation}
+
+
+Para nuestro ejemplo:
+\begin{equation}
+\begin{aligned}
+    \text{Puntos de entrada}
+    &=P=\{ p_1, p_2, p_3, p_4, p_5, p_6\}\\
+    \text{Puntos de intersección}
+    &=\{ p_{int-a_{1,2}}, p_{int-b_{1,2}}, p_{int-a_{4,5}}, p_{int-b_{4,5}}, p_{int-a_{4,6}}, p_{int-b_{4,6}},\\ 
+    &\qquad p_{int-a_{3,8}}, p_{int-b_{3,8}}, p_{int-a_{5,6}}, p_{int-b_{5,6}}, p_{int-a_{5,11}}, p_{int-b_{5,11}},\\ 
+    &\qquad p_{int-a_{6,7}}, p_{int-b_{6,7}}, p_{int-a_{7,8}}, p_{int-b_{7,8}}, p_{int-a_{8,13}}, p_{int-b_{8,13}},\\ 
+    &\qquad p_{int-a_{8,16}}, p_{int-b_{8,16}}, p_{int-a_{9,10}}, p_{int-b_{9,10}}, p_{int-a_{12,13}}, p_{int-b_{12,13}},\\ 
+    &\qquad p_{int-a_{14,15}}, p_{int-b_{14,15}}, \}\\
+    \text{Puntos izquierdos}
+    &=\{p_{izq-c_1}, p_{izq-c_2}, p_{izq-c_3}, p_{izq-c_4}, p_{izq-c_5}, p_{izq-c_6}, p_{izq-c_7},\\ 
+    &\qquad p_{izq-c_8}, p_{izq-c_9}, p_{izq-c_{10}}, p_{izq-c_{11}}, p_{izq-c_{12}}, p_{izq-c_{13}}, p_{izq-c_{14}},\\ 
+    &\qquad p_{izq-c_{15}}, p_{izq-c_{16}} \}\\
+    \text{Puntos derechos}
+    &=\{p_{der-c_1}, p_{der-c_2}, p_{der-c_3}, p_{der-c_4}, p_{der-c_5}, p_{der-c_6}, p_{der-c_7},\\ 
+    &\qquad p_{der-c_8}, p_{der-c_9}, p_{der-c_{10}}, p_{der-c_{11}}, p_{der-c_{12}}, p_{der-c_{13}}, p_{der-c_{14}},\\ 
+    &\qquad p_{der-c_{15}}, p_{der-c_{16}} \}\\
+\end{aligned}
+\end{equation}
+
+La figura \ref{circles_data} muestra los puntos de entrada; la figura \ref{circles_izqder} muestra los puntos izquierdos y derechos, y la figura \ref{circles_inter} muestra los puntos de intersección. Usando esta notación podemos construir $Q$
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{imagenes/circles_03_izq_der.pdf}
+    \caption{Puntos izquierdos y derechos }
+    \label{circles_izqder}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{imagenes/circles_04_int.pdf}
+    \caption{Puntos de intersección}
+    \label{circles_inter}
+\end{figure}
+
+\begin{equation}
+\begin{aligned}
+Q
+  &= (\text{Puntos izquierdos}\cup\text{Puntos de entrada})_{ordenados}\\
+  &= \bigl(\{ p_{izq-c_1}, p_{izq-c_2}, p_{izq-c_3}, p_{izq-c_4}, p_{izq-c_5}, p_{izq-c_6}, p_{izq-c_7}, p_{izq-c_8}, p_{izq-c_9}, p_{izq-c_{10}}, \\
+  &\qquad  p_{izq-c_{11}}, p_{izq-c_{12}}, p_{izq-c_{13}}, p_{izq-c_{14}}, p_{izq-c_{15}}, p_{izq-c_{16}}\} \cup \{ p_1, p_2, p_3, p_4, p_5, p_6 \}\bigr)_{\text{ordenados}} \\
+  &= \bigl(\{ p_{izq-c_1}, p_{izq-c_2}, p_{izq-c_3}, p_{izq-c_4}, p_{izq-c_5}, p_{izq-c_6}, p_{izq-c_7}, p_{izq-c_8}, p_{izq-c_9}, p_{izq-c_{10}}, \\
+  &\qquad  p_{izq-c_{11}}, p_{izq-c_{12}}, p_{izq-c_{13}}, p_{izq-c_{14}}, p_{izq-c_{15}}, p_{izq-c_{16}}, p_1, p_2, p_3, p_4, p_5, p_6 \}\bigr)_{\text{ordenados}} \\
+  &= \{ p_{izq-c_{5}}, p_{izq-c_{11}}, p_{izq-c_{4}}, p_{izq-c_{6}}, p_{izq-c_{14}}, p_{izq-c_{15}}, p_{izq-c_{1}}, p_{izq-c_{2}}, p_{2}, p_{izq-c_{7}}, \\
+  &\qquad p_{izq-c_{12}}, p_{6}, p_{izq-c_{8}}, p_{izq-c_{16}}, p_{izq-c_{13}}, p_{izq-c_{3}}, p_1, p_5, p_3, p_{izq-c_{9}}, p_{izq-c_{10}}, p_4  \}
+\end{aligned}
+\end{equation}
+
+
+\begin{definition}
+Se dice que un círculo $c$ está activo si se encuentra vacío, o si aún no se ha detectado ningún testigo, esto es, un punto de entrada dentro del círculo.
+
+Al conjunto de círculos activos lo denotamos por $A_c$. 
+\end{definition}
+
+Al inicio $A_c=C$, conforme evaluemos a los puntos de entrada éste conjunto se irá ``podando".
+
+\subsubsection{Desarrollo}
+Antes de iniciar, nuestros valores son los siguientes:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}),\\ 
+    &\qquad (5, 4, \text{izq}, c_{15}), (6, 30.5, \text{izq}, c_{1}), (7.5, 30.5, \text{izq}, c_{2}), (9, 17, \text{ent}, p_{2}), (9.5, 17, \text{izq}, c_{7}),\\
+    &\qquad (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}),\\
+    &\qquad (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}),\\
+    &\qquad (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_0\}
+\end{aligned}
+\end{equation}
+
+\newpage
+\paragraph{Paso 1: $\mathbf{x=0}$, Algoritmo de punto izquierdo}
+
+{\scriptsize
+\begin{enumerate}
+    \item $(0, 17, \text{izq}, c_{5})$
+    \begin{enumerate}[itemsep=-2.5pt, topsep=-2.5pt]
+    
+        \item Sea $e \in Q$ el punto izquierdo del círculo $c_{5}$
+        \begin{itemize}
+            \item $e=(0, 17, \text{izq}, c_{5})$
+        \end{itemize}
+        \item Incertar en Q el punto derecho del círculo $c_5$
+        \begin{itemize}
+            \item $Q=Q\cup\{(8, 17, \text{der}, c_5)\}$
+        \end{itemize}
+        \item $r =$ la región en $\mathcal{L}$ que contiene a $e$
+        \begin{itemize}
+            \item $\mathcal{L}=\{r_0\}\Rightarrow r=r_0$ 
+        \end{itemize}
+        \item $r_{up}=$ la región arriba de $c$ de $r$
+        \begin{itemize}
+            \item $r_{up}=r_0$
+        \end{itemize}
+        \item $r_{middle}=$ la región en $c$ de $r$
+        \begin{itemize}
+            \item $r_{middle}=r_{c5}$
+        \end{itemize}
+        \item $r_{down}=$ la región debajo de $c$ de $r$
+        \begin{itemize}
+            \item $r_{down}=r_0$
+        \end{itemize}
+        \item Quitar $r=r_0$ de $\mathcal{L}$.
+        \begin{itemize}
+            \item $\mathcal{L}=\emptyset$ 
+        \end{itemize}
+        \item Insertar $r_{up}$, $r_{middle}$, $r_{down}$ en $\mathcal{L}$
+        \begin{itemize}
+            \item $\mathcal{L}=\mathcal{L}\cup\{r_0, r_{c_5}, r_0\}$
+        \end{itemize}
+        \item $C_{r_{up}} = C_{r_{down}} = C_r$
+        \begin{itemize}
+            \item $C_{r_{up}} = C_{r_{down}} = C_r=\emptyset$
+        \end{itemize}
+        \item $C_{r_{middle}} = C_r \cup \{c_5\}$
+        \begin{itemize}
+            \item $C_{r_{middle}} = \emptyset \cup \{c_5\}=\{c_5\}$
+        \end{itemize}
+        \item Si $c_5$ intersecta el arco circular que limita por arriba a $r_{up}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item No aplica
+        \end{itemize}
+        \item Si $c_5$ intersecta el arco circular que limita por abajo a $r_{down}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item No aplica
+        \end{itemize}
+        \item Fin
+    \end{enumerate}
+\end{enumerate}
+
+
+\vspace{1.5em} 
+Al final del Paso 1 tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}),\\ 
+    &\qquad (5, 4, \text{izq}, c_{15}), (6, 30.5, \text{izq}, c_{1}), (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), (9, 17, \text{ent}, p_{2}), \\
+    &\qquad (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), \\
+    &\qquad (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), \\
+    &\qquad (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_0, r_{c_5}, r_0\}
+\end{aligned}
+\end{equation}
+}
+
+\newpage
+
+\paragraph{Paso 2: $x=1$, Algoritmo de punto izquierdo}
+
+{\scriptsize
+
+\begin{enumerate}
+    \item $(1, 11, \text{izq}, c_{11})$
+    \begin{enumerate}
+        \item Sea $e \in Q$ el punto izquierdo del círculo $c_{11}$
+        \begin{itemize}
+            \item $e=(1, 11, \text{izq}, c_{11})$
+        \end{itemize}
+        \item Incertar en Q el punto derecho del círculo $c_{11}$
+        \begin{itemize}
+            \item $Q=Q\cup\{(7, 11, \text{der}, c_{11})\}$
+        \end{itemize}
+        \item $r =$ la región en $\mathcal{L}$ que contiene a $e$
+        \begin{itemize}
+            \item $\mathcal{L}=\{r_{0_1}, r_{c_5}, r_{0_2}\} \Rightarrow r=r_{0_1}$ 
+        \end{itemize}
+        \item $r_{up}=$ la región arriba de $c$ de $r$
+        \begin{itemize}
+            \item $r_{up}=r_0$
+        \end{itemize}
+        \item $r_{middle}=$ la región en $c$ de $r$
+        \begin{itemize}
+            \item $r_{middle}=r_{c_{11}}$
+        \end{itemize}
+        \item $r_{down}=$ la región debajo de $c$ de $r$
+        \begin{itemize}
+            \item $r_{down}=r_0$
+        \end{itemize}
+        \item Quitar $r=r_{0_1}$ de $\mathcal{L}$.
+        \begin{itemize}
+            \item $\mathcal{L}=\{r_{c_5}, r_{0_2}\}$ 
+        \end{itemize}
+        \item Insertar $r_{up}$, $r_{middle}$, $r_{down}$ en $\mathcal{L}$
+        \begin{itemize}
+            \item $\mathcal{L}=\mathcal{L}\cup\{r_0, r_{c_{11}}, r_0\}=\{r_0, r_{c_{11}}, r_0, r_{c_5}, r_0\}$
+        \end{itemize}
+        \item $C_{r_{up}} = C_{r_{down}} = C_r$
+        \begin{itemize}
+            \item $C_{r_{up}} = C_{r_{down}} = C_r=\emptyset$
+        \end{itemize}
+        \item $C_{r_{middle}} = C_r \cup \{c_{11}\}$
+        \begin{itemize}
+            \item $C_{r_{middle}} = \emptyset \cup \{c_{11}\}=\{c_{11}\}$
+        \end{itemize}
+        \item Si $c_{11}$ intersecta el arco circular que limita por arriba a $r_{up}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item $c_{11}$ intersecta a $c_5$
+            \item $Q=Q\cup\{(2.2224, 13.4167, \text{int}, c_{5y11})\}$
+        \end{itemize}
+        \item Si $c_{11}$ intersecta el arco circular que limita por abajo a $r_{down}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item No aplica
+        \end{itemize}
+        \item Fin
+    \end{enumerate}
+
+Al final tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}), (2.5, 17, \text{izq}, c_{6}), \\ 
+    &\qquad (3, 4, \text{izq}, c_{14}), (5, 4, \text{izq}, c_{15}), (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_11), (7.5, 30.5, \text{izq}, c_{2}), \\
+    &\qquad (8, 17, \text{der}, c_5), (9, 17, \text{ent}, p_{2}), (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}),\\
+    &\qquad  (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), \\
+    &\qquad (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_0, r_{c_{11}}, r_0, r_{c_5}, r_0\}
+\end{aligned}
+\end{equation}
+
+
+\item $(1, 23, \text{izq}, c_{4})$
+
+\begin{enumerate}
+    \item Sea $e \in Q$ el punto izquierdo del círculo $c_{4}$
+    \begin{itemize}
+        \item $e=(1, 23, \text{izq}, c_{4})$
+    \end{itemize}
+    \item Incertar en Q el punto derecho del círculo $c_{4}$
+    \begin{itemize}
+        \item $Q=Q\cup\{(7, 23, \text{der}, c_{4})\}$
+    \end{itemize}
+    \item $r =$ la región en $\mathcal{L}$ que contiene a $e$
+    \begin{itemize}
+        \item $\mathcal{L}=\{r_0, r_{c_{11}}, r_0, r_{c_5}, r_{0_e}\} \Rightarrow r=r_{0_e}$ 
+    \end{itemize}
+    \item $r_{up}=$ la región arriba de $c$ de $r$
+    \begin{itemize}
+        \item $r_{up}=r_0$
+    \end{itemize}
+    \item $r_{middle}=$ la región en $c$ de $r$
+    \begin{itemize}
+        \item $r_{middle}=r_{c_{4}}$
+    \end{itemize}
+    \item $r_{down}=$ la región debajo de $c$ de $r$
+    \begin{itemize}
+        \item $r_{down}=r_0$
+    \end{itemize}
+    \item Quitar $r=r_{0_e}$ de $\mathcal{L}$.
+    \begin{itemize}
+        \item $\mathcal{L}=\{ r_0, r_{c_{11}}, r_0, r_{c_5}\}$ 
+    \end{itemize}
+    \item Insertar $r_{up}$, $r_{middle}$, $r_{down}$ en $\mathcal{L}$
+    \begin{itemize}
+        \item $\mathcal{L}=\mathcal{L}\cup\{r_0, r_{c_{4}}, r_0\}=\{r_0, r_{c_{11}}, r_0, r_{c_5}, r_0, r_{c_{4}}, r_0\}$
+    \end{itemize}
+    \item $C_{r_{up}} = C_{r_{down}} = C_r$
+    \begin{itemize}
+        \item $C_{r_{up}} = C_{r_{down}} = C_r=\emptyset$
+    \end{itemize}
+    \item $C_{r_{middle}} = C_r \cup \{c_{4}\}$
+    \begin{itemize}
+        \item $C_{r_{middle}} = \emptyset \cup \{c_{4}\}=\{c_{4}\}$
+    \end{itemize}
+    \item Si $c_{4}$ intersecta el arco circular que limita por arriba a $r_{up}$, entonces inserta este punto de intersección en $Q$
+    \begin{itemize}
+        \item No aplica
+    \end{itemize}
+    \item Si $c_{4}$ intersecta el arco circular que limita por abajo a $r_{down}$, entonces inserta este punto de intersección en $Q$
+    \begin{itemize}
+        \item $c_{11}$ intersecta a $c_5$
+        \item $Q=Q\cup\{(2.2224, 20.5833, \text{int}, c_{4y5})\}$
+    \end{itemize}
+    \item Fin
+\end{enumerate}
+\end{enumerate}
+Al final del Paso 2 tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}),  \\ 
+    &\qquad (2.2224, 20.5833, \text{int}, c_{4y5}), (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (5, 4, \text{izq}, c_{15}), (6, 30.5, \text{izq}, c_{1}),  \\
+    &\qquad (7, 11, \text{der}, c_11), (7, 23, \text{der}, c_{4}), (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), (9, 17, \text{ent}, p_{2}), \\
+    &\qquad  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}),   \\
+    &\qquad (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}),\\
+    &\qquad (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_0, r_{c_{11}}, r_0, r_{c_5}, r_0, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+}
+
+
+\paragraph{Paso 3: $x=2.2224$, Algoritmo de punto de intersección}
+
+{\scriptsize
+
+
+\begin{enumerate}
+    \item $(2.2224, 13.4167, \text{int}, c_{5y11})$
+    \begin{enumerate}
+        \item Sea $e$ el punto de intersección entre los círculos $c_{11}$ y $c_{5}.$
+        \begin{itemize}
+            \item $e=(2.2224, 13.4167, \text{int}, c_{5y11})$
+        \end{itemize}
+        \item $r_i =$ la región en $\mathcal{L}$ que contiene a $e$ en el límite, para $i=c_5, 0, c_{11}$, en orden de arriba a abajo.
+        \item Los arcos que limitan a la región $r_0$ cambian: El arco del círculo $c_{11}$ que limitaba a $r_0$ por abajo ahora lo limita por arriba, y el arco del círculo $c_5$ que limitaba a $r_0$ por arriba, ahora lo limita por abajo.
+        \item $C_{r_0}'=C_{r_0}-\{c_{5}, c_{11}\}=\emptyset-\{c_{5}, c_{11}\}=\emptyset$
+        \item Si $r_{c_{5}yc_{11}} \in c_5$ then $C_{r_0}' \cup \{c_{5}\}$
+        \begin{itemize}
+            \item $C_{r_0}''=\emptyset \cup \{c_{5}\}=\{c_{5}\}$
+        \end{itemize}
+        \item Si $r_{c_{5}yc_{11}} \in c_{11}$ then $C_{r_0}'' \cup \{c_{11}\}$
+        \begin{itemize}
+            \item $C_{r_0}'''=\{c_{5}\} \cup \{c_{11}\}=\{c_{5}, c_{11} \}=C_{r_{c_{5}yc_{11}}}$
+            \item se sustituye $r_0$ en $\mathcal{L}$ por $r_{c_{5}yc_{11}}$
+        \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{11}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{11}$ es (7,11), que ya se encuentra dentro de $Q$.
+            \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{5}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item  El punto más a la derecha que cumple con $(x,y) \in c_{5}$ es (8,17), que ya se encuentra dentro de $Q$.
+            \end{itemize}
+    \end{enumerate}
+
+Al final tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}),  \\ 
+    &\qquad (2.2224, 20.5833, \text{int}, c_{4y5}), (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad  (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_11), (7, 23, \text{der}, c_{4}), (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), \\
+    &\qquad (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}), (12, 15, \text{izq}, c_{8}),   \\
+    &\qquad (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), (18, 9.5, \text{ent}, p_{5}), \\
+    &\qquad (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_0, r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_5}, r_0, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+    \newpage
+    \item $(2.2224, 20.5833, \text{int}, c_{4y5})$
+    \begin{enumerate}
+        \item Sea $e$ el punto de intersección entre los círculos $c_{4}$ y $c_{5}.$
+        \begin{itemize}
+            \item $e=(2.2224, 13.4167, \text{int}, c_{5y11})$
+        \end{itemize}
+        \item $r_i =$ la región en $\mathcal{L}$ que contiene a $e$ en el límite, para $i=c_{4}, 0, c_{5}$, en orden de arriba a abajo.
+        \item Los arcos que limitan a la región $r_0$ cambian: El arco del círculo $c_{5}$ que limitaba a $r_0$ por abajo ahora lo limita por arriba, y el arco del círculo $c_4$ que limitaba a $r_0$ por arriba, ahora lo limita por abajo.
+        \item $C_{r_0}'=C_{r_0}-\{c_{4}, c_{5}\}=\emptyset-\{c_{4}, c_{5}\}=\emptyset$
+        \item Si $r_{c_{4}yc_{5}} \in c_4$ then $C_{r_0}' \cup \{c_{4}\}$
+        \begin{itemize}
+            \item $C_{r_0}''=\emptyset \cup \{c_{4}\}=\{c_{4}\}$
+        \end{itemize}
+        \item Si $r_{c_{4}yc_{5}} \in c_5$ then $C_{r_0}'' \cup \{c_{5}\}$
+        \begin{itemize}
+            \item $C_{r_0}'''=\{c_{4}\} \cup \{c_{5}\}=\{c_{4}, c_{5} \}=C_{r_{c_{4}yc_{5}}}$
+            \item se sustituye $r_0$ en $\mathcal{L}$ por $r_{c_{4}yc_{5}}$
+        \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{5}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{5}$ es (8,17), que ya se encuentra dentro de $Q$.
+            \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{4}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{4}$ es (7,23), que ya se encuentra dentro de $Q$.
+            \end{itemize}
+    \end{enumerate}
+
+Al final del Paso 3 tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}),  \\ 
+    &\qquad (2.2224, 20.5833, \text{int}, c_{4y5}), (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad  (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_11), (7, 23, \text{der}, c_{4}), (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), \\
+    &\qquad (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}), (12, 15, \text{izq}, c_{8}),   \\
+    &\qquad (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), (18, 9.5, \text{ent}, p_{5}), \\
+    &\qquad (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_0, r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_5}, r_{c_{4}yc_{5}}, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+\end{enumerate}
+
+}
+\newpage
+
+\paragraph{Paso 4: $\mathbf{x=2.5}$, Algoritmo de punto izquierdo}
+
+{\scriptsize
+\begin{enumerate}
+    \item $(2.5, 17, \text{izq}, c_{6})$
+    \begin{enumerate}[itemsep=-2.5pt, topsep=-2.5pt]
+    
+        \item Sea $e \in Q$ el punto izquierdo del círculo $c_{6}$
+        \begin{itemize}
+            \item $e=(2.5, 17, \text{izq}, c_{6})$
+        \end{itemize}
+        \item Incertar en Q el punto derecho del círculo $c_6$
+        \begin{itemize}
+            \item $Q=Q\cup\{(11.5, 17, \text{der}, c_6)\}$
+        \end{itemize}
+        \item $r =$ la región en $\mathcal{L}$ que contiene a $e$
+        \begin{itemize}
+            \item $\mathcal{L}=\{r_0, r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_5}, r_0, r_{c_{4}}, r_0\}\Rightarrow r=r_{c_5}$ 
+        \end{itemize}
+        \item $r_{up}=$ la región arriba de $c$ de $r$
+        \begin{itemize}
+            \item $r_{up}=r_{c_5}$
+        \end{itemize}
+        \item $r_{middle}=$ la región en $c$ de $r$
+        \begin{itemize}
+            \item $r_{middle}=r_{c_5yc_6}$
+        \end{itemize}
+        \item $r_{down}=$ la región debajo de $c$ de $r$
+        \begin{itemize}
+            \item $r_{down}=r_{c_5}$
+        \end{itemize}
+        \item Quitar $r=r_{c_5}$ de $\mathcal{L}$.
+        \begin{itemize}
+            \item $\mathcal{L}-r_{c_5}=\{r_0, r_{c_{11}}, r_{c_{5}yc_{11}}, r_0, r_{c_{4}}, r_0\}$ 
+        \end{itemize}
+        \item Insertar $r_{up}$, $r_{middle}$, $r_{down}$ en $\mathcal{L}$
+        \begin{itemize}
+            \item $\mathcal{L}=\mathcal{L}\cup\{r_{c_5}, r_{c_5yc_6}, r_{c_5}\}$
+        \end{itemize}
+        \item $C_{r_{up}} = C_{r_{down}} = C_r$
+        \begin{itemize}
+            \item $C_{r_{up}} = C_{r_{down}} = C_r=\{c_5\}$
+        \end{itemize}
+        \item $C_{r_{middle}} = C_r \cup \{c_6\}$
+        \begin{itemize}
+            \item $C_{r_{middle}} = \{c_5\} \cup \{c_6\}=\{c_5, c_6\}$
+        \end{itemize}
+        \item Si $c_6$ intersecta el arco circular que limita por arriba a $r_{up}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item $c_{6}$ intersecta a $c_4$
+            \item $Q=Q\cup\{(3.6630, 20.0190, \text{int}, c_{4y6})\}$
+        \end{itemize}
+        \item Si $c_6$ intersecta el arco circular que limita por abajo a $r_{down}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item $c_{6}$ intersecta a $c_11$
+            \item $Q=Q\cup\{(3.6630, 13.9810, \text{int}, c_{6y11})\}$
+        \end{itemize}
+        \item Fin
+    \end{enumerate}
+\end{enumerate}
+
+
+\vspace{1.5em} 
+Al final del Paso 4 tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}), (2.2224, 20.5833, \text{int}, c_{4y5}), \\ 
+    &\qquad  (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (3.6630, 13.9810, \text{int}, c_{6y11}), (3.6630, 20.0190, \text{int}, c_{4y6}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad  (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_{11}), (7, 23, \text{der}, c_{4}),  \\
+    &\qquad (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}),   \\
+    &\qquad (11.5, 17, \text{der}, c_6), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), \\
+    &\qquad (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_0, r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_5}, r_{c_5yc_6}, r_{c_5}, r_{c_{4}yc_{5}}, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+}
+\newpage
+
+\paragraph{Paso 5: $\mathbf{x=3}$, Algoritmo de punto izquierdo}
+
+{\scriptsize
+\begin{enumerate}
+    \item $(3, 4, \text{izq}, c_{14})$
+    \begin{enumerate}[itemsep=-2.5pt, topsep=-2.5pt]
+    
+        \item Sea $e \in Q$ el punto izquierdo del círculo $c_{14}$
+        \begin{itemize}
+            \item $e=(3, 4, \text{izq}, c_{14})$
+        \end{itemize}
+        \item Incertar en Q el punto derecho del círculo $c_14$
+        \begin{itemize}
+            \item $Q=Q\cup\{(9, 4, \text{der}, c_{14})\}$
+        \end{itemize}
+        \item $r =$ la región en $\mathcal{L}$ que contiene a $e$
+        \begin{itemize}
+            \item $\mathcal{L}=\{r_0, r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_5}, r_{c_5yc_6}, r_{c_5}, r_0, r_{c_{4}}, r_0\}\Rightarrow r=r_{0}$ 
+        \end{itemize}
+        \item $r_{up}=$ la región arriba de $c$ de $r$
+        \begin{itemize}
+            \item $r_{up}=r_{0}$
+        \end{itemize}
+        \item $r_{middle}=$ la región en $c$ de $r$
+        \begin{itemize}
+            \item $r_{middle}=r_{c_{14}}$
+        \end{itemize}
+        \item $r_{down}=$ la región debajo de $c$ de $r$
+        \begin{itemize}
+            \item $r_{down}=r_{0}$
+        \end{itemize}
+        \item Quitar $r=r_{0}$ de $\mathcal{L}$.
+        \begin{itemize}
+            \item $\mathcal{L}-r_{0}=\{r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_5}, r_{c_5yc_6}, r_{c_5}, r_0, r_{c_{4}}, r_0\}$ 
+        \end{itemize}
+        \item Insertar $r_{up}$, $r_{middle}$, $r_{down}$ en $\mathcal{L}$
+        \begin{itemize}
+            \item $\mathcal{L}=\mathcal{L}\cup\{r_{0}, r_{c_{14}}, r_{0}\}$
+        \end{itemize}
+        \item $C_{r_{up}} = C_{r_{down}} = C_r$
+        \begin{itemize}
+            \item $C_{r_{up}} = C_{r_{down}} = C_r=\{0\}$
+        \end{itemize}
+        \item $C_{r_{middle}} = C_r \cup \{c_{14}\}$
+        \begin{itemize}
+            \item $C_{r_{middle}} = \emptyset \cup \{c_{14}\}=\{c_{14}\}$
+        \end{itemize}
+        \item Si $c_{14}$ intersecta el arco circular que limita por arriba a $r_{up}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item No aplica
+        \end{itemize}
+        \item Si $c_14$ intersecta el arco circular que limita por abajo a $r_{down}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item No aplica
+        \end{itemize}
+        \item Fin
+    \end{enumerate}
+\end{enumerate}
+
+
+\vspace{1.5em} 
+Al final del Paso 5 tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}), (2.2224, 20.5833, \text{int}, c_{4y5}), \\ 
+    &\qquad  (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (3.6630, 13.9810, \text{int}, c_{6y11}), (3.6630, 20.0190, \text{int}, c_{4y6}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_{11}), (7, 23, \text{der}, c_{4}),  \\
+    &\qquad (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), (9, 4, \text{der}, c_{14}), (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}),   \\
+    &\qquad (11.5, 17, \text{der}, c_6), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), \\
+    &\qquad (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_{0}, r_{c_{14}}, r_{0}, r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_5}, r_{c_5yc_6}, r_{c_5}, r_{c_{4}yc_{5}}, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+}
+\newpage
+
+\paragraph{Paso 6: $x=3.6630$, Algoritmo de punto de intersección}
+
+{\scriptsize
+
+
+\begin{enumerate}
+    \item $(3.6630, 13.9810, \text{int}, c_{6y11})$
+    \begin{enumerate}
+        \item Sea $e$ el punto de intersección entre los círculos $c_{6}$ y $c_{11}.$
+        \begin{itemize}
+            \item $e=(3.6630, 13.9810, \text{int}, c_{6y11})$
+        \end{itemize}
+        \item $r_i =$ la región en $\mathcal{L}$ que contiene a $e$ en el límite, para $i=c_5yc_6, c_5, c_5yc_{11}$, en orden de arriba a abajo.
+        \item Los arcos que limitan a la región $r_{c_5}$ cambian: El arco del círculo $c_{11}$ que limitaba a $r_{c_5}$ por abajo ahora lo limita por arriba, y el arco del círculo $c_6$ que limitaba a $r_0$ por arriba, ahora lo limita por abajo.
+        \item $C_{r_{c_5}}'=C_{r_{c_5}}-\{c_{6}, c_{11}\}=\{c_5\}-\{c_{6}, c_{11}\}=\{c_5\}$
+        \item Si $r_{c_{5}c_{6}yc_{11}} \in c_6$ then $C_{r_{c_5}}' \cup \{c_{6}\}$
+        \begin{itemize}
+            \item $C_{r_0}''=\{c_5\}\cup \{c_{6}\}=\{c_{6}\}$
+        \end{itemize}
+        \item Si $r_{c_{5}c_{6}yc_{11}} \in c_{11}$ then $C_{r_{c_5}}'' \cup \{c_{11}\}$
+        \begin{itemize}
+            \item $C_{r_0}'''=\{c_{5},c_{6}\} \cup \{c_{11}\}=\{c_{5}, c_{6}, c_{11} \}=C_{r_{c_{5}c_{6}yc_{11}}}$
+            \item se sustituye $r_{c_5}$ en $\mathcal{L}$ por $r_{c_{5}c_{6}yc_{11}}$
+        \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{5}yc_{6}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{5}\cap c_{6}$ es (8,17), que ya se encuentra dentro de $Q$.
+            \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{5}yc_{11}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{5}\cap c_{11}$ y en el límite de la región $c_{6}$ es (4.7917, 13.0791), se agrega $(4.7917, 13.0791, \text{int}, c_{5y6})$ a $Q$.
+            \end{itemize}
+    \end{enumerate}
+
+Al final tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}), (2.2224, 20.5833, \text{int}, c_{4y5}), \\ 
+    &\qquad  (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (3.6630, 13.9810, \text{int}, c_{6y11}), (3.6630, 20.0190, \text{int}, c_{4y6}), (4.7917, 13.0791, \text{int}, c_{5y6}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_{11}), (7, 23, \text{der}, c_{4}),  \\
+    &\qquad (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), (9, 4, \text{der}, c_{14}), (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}),   \\
+    &\qquad (11.5, 17, \text{der}, c_6), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), \\
+    &\qquad (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_{0}, r_{c_{14}}, r_{0}, r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_{5}c_{6}yc_{11}}, r_{c_5yc_6}, r_{c_5}, r_{c_{4}yc_{5}}, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+
+    \newpage
+    \item $(3.6630, 20.0190, \text{int}, c_{4y6})$
+    \begin{enumerate}
+        \item Sea $e$ el punto de intersección entre los círculos $c_{4}$ y $c_{6}.$
+        \begin{itemize}
+            \item $e=(3.6630, 20.0190, \text{int}, c_{4y6})$
+        \end{itemize}
+        \item $r_i =$ la región en $\mathcal{L}$ que contiene a $e$ en el límite, para $i=c_{4}yc_{5}, c_{5}, c_{5}yc_{6}$, en orden de arriba a abajo.
+        \item Los arcos que limitan a la región $r_{c_{5}}$ cambian: El arco del círculo $c_{6}$ que limitaba a $r_{c_{5}}$ por abajo ahora lo limita por arriba, y el arco del círculo $c_4$ que limitaba a $r_{c_{5}}$ por arriba, ahora lo limita por abajo.
+        \item $C_{r_{c_{5}}}'=C_{r_{c_{5}}}-\{c_{4}, c_{6}\}=\{c_{5}\}-\{c_{4}, c_{6}\}=\{c_{5}\}$
+        \item Si $r_{c_{4}c_{5}yc_{6}} \in c_4$ then $C_{r_{c_{5}}}' \cup \{c_{4}\}$
+        \begin{itemize}
+            \item $C_{r_{c_{5}}}''=\{c_{5}\}\cup \{c_{4}\}=\{c_{4}, c_{5}\}$
+        \end{itemize}
+        \item Si $r_{c_{4}c_{5}yc_{6}} \in c_6$ then $C_{r_{c_{5}}}'' \cup \{c_{6}\}$
+        \begin{itemize}
+            \item $C_{r_{c_{5}}}'''=\{c_{4}, c_{5}\} \cup \{c_{6}\}=\{c_{4}, c_{5}, c_{6} \}=C_{r_{c_{4}c_{5}yc_{6}}}$
+            \item se sustituye $r_{c_{5}}$ en $\mathcal{L}$ por $r_{c_{4}c_{5}yc_{6}}$
+        \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{4}yc_{5}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{4}\cap c_{5}$ y en el límite de la región $c_{6}$ es (4.7917, 20.9209), se agrega $(4.7917, 20.9209, \text{int}, c_{5y6})$ a $Q$.
+            \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{5}yc_{6}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{5}\cap c_{6}$ es (8,17), que ya se encuentra dentro de $Q$.
+            \end{itemize}
+    \end{enumerate}
+
+Al final del Paso 6 tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}), (2.2224, 20.5833, \text{int}, c_{4y5}), \\ 
+    &\qquad  (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (3.6630, 13.9810, \text{int}, c_{6y11}), (3.6630, 20.0190, \text{int}, c_{4y6}), (4.7917, 13.0791, \text{int}, c_{5y6}), (4.7917, 20.9209, \text{int}, c_{5y6}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_{11}), (7, 23, \text{der}, c_{4}),  \\
+    &\qquad (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), (9, 4, \text{der}, c_{14}), (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}),   \\
+    &\qquad (11.5, 17, \text{der}, c_6), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), \\
+    &\qquad (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_{0}, r_{c_{14}}, r_{0}, r_{c_{11}}, r_{c_{5}yc_{11}}, r_{c_{5}c_{6}yc_{11}}, r_{c_5yc_6}, r_{c_{4}c_{5}yc_{6}}, r_{c_{4}yc_{5}}, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+\end{enumerate}
+
+}
+\newpage
+
+\paragraph{Paso 7: $x=4.7917$, Algoritmo de punto de intersección}
+
+{\scriptsize
+
+
+\begin{enumerate}
+    \item $(4.7917, 13.0791, \text{int}, c_{5y6})$
+    \begin{enumerate}
+        \item Sea $e$ el punto de intersección entre los círculos $c_{5}$ y $c_{6}.$
+        \begin{itemize}
+            \item $e=(4.7917, 13.0791, \text{int}, c_{5y6})$
+        \end{itemize}
+        \item $r_i =$ la región en $\mathcal{L}$ que contiene a $e$ en el límite, para $i=c_5c_6yc_{11}, c_5yc_{11}, c_{11}$, en orden de arriba a abajo.
+        \item Los arcos que limitan a la región $r_{c_5yc_{11}}$ cambian: El arco del círculo $c_{5}$ que limitaba a $r_{c_5yc_{11}}$ por abajo ahora lo limita por arriba, y el arco del círculo $c_6$ que limitaba a $r_{c_5yc_{11}}$ por arriba, ahora lo limita por abajo.
+        \item $C_{r_{c_5yc_{11}}}'=C_{r_{c_5yc_{11}}}-\{c_{5}, c_{6}\}=\{c_5, c_{11}\}-\{c_{5}, c_{6}\}=\{c_{11}\}$
+        \item Si $r_{c_{4}yc_{6}} \in c_5$ then $C_{r_{c_5yc_{11}}}' \cup \{c_{5}\}$
+        \begin{itemize}
+            \item $C_{r_{c_5yc_{11}}}''=\{c_11\}$
+        \end{itemize}
+        \item Si $r_{c_{4}yc_{6}} \in c_{6}$ then $C_{r_{c_5yc_{11}}}'' \cup \{c_{6}\}$
+        \begin{itemize}
+            \item $C_{r_{c_5yc_{11}}}'''=\{c_{11}\} \cup \{c_{6}\}=\{c_{11}, c_{6} \}=C_{r_{c_{11}yc_{6}}}$
+            \item se sustituye $r_{c_5yc_{11}}$ en $\mathcal{L}$ por $r_{c_{11}yc_{6}}$
+        \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{5}c_{6}yc_{11}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{5}\cap c_6 \cap c_{11}$ es (5.7776, 13.4167), se agrega $(5.7776, 13.4167, \text{int}, c_{5y11})$ a $Q$.
+            \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{11}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{11}$ es (7,11), que ya se encuentra dentro de $Q$.
+            \end{itemize}
+    \end{enumerate}
+
+Al final tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}), (2.2224, 20.5833, \text{int}, c_{4y5}), \\ 
+    &\qquad  (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (3.6630, 13.9810, \text{int}, c_{6y11}), (3.6630, 20.0190, \text{int}, c_{4y6}), (4.7917, 13.0791, \text{int}, c_{5y6}), (4.7917, 20.9209, \text{int}, c_{5y6}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad (5.7776, 13.4167, \text{int}, c_{5y11}), (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_{11}), (7, 23, \text{der}, c_{4}),  \\
+    &\qquad (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), (9, 4, \text{der}, c_{14}), (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}),   \\
+    &\qquad (11.5, 17, \text{der}, c_6), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), \\
+    &\qquad (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_{0}, r_{c_{14}}, r_{0}, r_{c_{11}}, r_{c_{6}yc_{11}}, r_{c_{5}c_{6}yc_{11}}, r_{c_5yc_6}, r_{c_5}, r_{c_{4}yc_{5}}, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+
+    \newpage
+    \item $(4.7917, 20.9209, \text{int}, c_{5y6})$
+    \begin{enumerate}
+        \item Sea $e$ el punto de intersección entre los círculos $c_{5}$ y $c_{6}.$
+        \begin{itemize}
+            \item $e=(4.7917, 20.9209, \text{int}, c_{5y6})$
+        \end{itemize}
+        \item $r_i =$ la región en $\mathcal{L}$ que contiene a $e$ en el límite, para $i=c_{4}, c_4yc_{5}, c_{4}c_{5}yc_{6}$, en orden de arriba a abajo.
+        \item Los arcos que limitan a la región $r_{c_4yc_{5}}$ cambian: El arco del círculo $c_{6}$ que limitaba a $r_{c_4yc_{5}}$ por abajo ahora lo limita por arriba, y el arco del círculo $c_5$ que limitaba a $r_{c_4yc_{5}}$ por arriba, ahora lo limita por abajo.
+        \item $C_{r_{c_4yc_{5}}}'=C_{r_{c_4yc_{5}}}-\{c_{5}, c_{6}\}=\{c_{4}, c_{5}\}-\{c_{5}, c_{6}\}=\{c_{4}\}$
+        \item Si $r_{c_{4}yc_{6}} \in c_4$ then $C_{r_{c_{5}}}' \cup \{c_{4}\}$
+        \begin{itemize}
+            \item $C_{r_{c_4yc_{5}}}''=\{c_{4}\}\cup \{c_{4}\}=\{c_{4}\}$
+        \end{itemize}
+        \item Si $r_{c_{4}yc_{6}} \in c_6$ then $C_{r_{c_{5}}}'' \cup \{c_{6}\}$
+        \begin{itemize}
+            \item $C_{r_{c_4yc_{5}}}'''=\{c_{4}\} \cup \{c_{6}\}=\{c_{4}, c_{6} \}=C_{r_{c_{4}yc_{6}}}$
+            \item se sustituye $r_{c_{4}yc{5}}$ en $\mathcal{L}$ por $r_{c_{4}yc_{6}}$
+        \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{4}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{4}\cap c_{6}$ es (7,23), que ya se encuentra dentro de $Q$.
+            \end{itemize}
+        \item Si los arcos que limitan a la región $r_{c_{4}c_{5}yc_{6}}$ intersectan, agregar ese punto de intersección a $Q$.
+            \begin{itemize}
+                \item El punto más a la derecha que cumple con $(x,y) \in c_{4}\cap c_{5} \cap c_{6}$ es (5.7776, 20.5833), se agrega $(5.7776, 20.5833, \text{int}, c_{4y5})$ a $Q$.
+            \end{itemize}
+    \end{enumerate}
+
+Al final del Paso 7 tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}), (2.2224, 20.5833, \text{int}, c_{4y5}), \\ 
+    &\qquad  (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (3.6630, 13.9810, \text{int}, c_{6y11}), (3.6630, 20.0190, \text{int}, c_{4y6}), (4.7917, 13.0791, \text{int}, c_{5y6}), (4.7917, 20.9209, \text{int}, c_{5y6}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad (5.7776, 13.4167, \text{int}, c_{5y11}),(5.7776, 20.5833, \text{int}, c_{4y5}), (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_{11}), (7, 23, \text{der}, c_{4}),  \\
+    &\qquad (7.5, 30.5, \text{izq}, c_{2}), (8, 17, \text{der}, c_5), (9, 4, \text{der}, c_{14}), (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}),   \\
+    &\qquad (11.5, 17, \text{der}, c_6), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), \\
+    &\qquad (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_{0}, r_{c_{14}}, r_{0}, r_{c_{11}}, r_{c_{6}yc_{11}}, r_{c_{5}c_{6}yc_{11}}, r_{c_5yc_6}, r_{c_5}, r_{c_{4}yc_{6}}, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+\end{enumerate}
+
+}
+\newpage
+
+\paragraph{Paso 8: $\mathbf{x=5}$, Algoritmo de punto izquierdo}
+
+{\scriptsize
+\begin{enumerate}
+    \item $(5, 4, \text{izq}, c_{15})$
+    \begin{enumerate}[itemsep=-2.5pt, topsep=-2.5pt]
+    
+        \item Sea $e \in Q$ el punto izquierdo del círculo $c_{15}$
+        \begin{itemize}
+            \item $e=(5, 4, \text{izq}, c_{15})$
+        \end{itemize}
+        \item Incertar en Q el punto derecho del círculo $c_15$
+        \begin{itemize}
+            \item $Q=Q\cup\{(10, 4, \text{der}, c_{15})\}$
+        \end{itemize}
+        \item $r =$ la región en $\mathcal{L}$ que contiene a $e$
+        \begin{itemize}
+            \item $\mathcal{L}=\{r_{0}, r_{c_{14}}, r_{0}, r_{c_{11}}, r_{c_{6}yc_{11}}, r_{c_{5}c_{6}yc_{11}}, r_{c_5yc_6}, r_{c_5}, r_{c_{4}yc_{6}}, r_{c_{4}}, r_0\}\Rightarrow r=r_{c_{14}}$ 
+        \end{itemize}
+        \item $r_{up}=$ la región arriba de $c$ de $r$
+        \begin{itemize}
+            \item $r_{up}=r_{c_{14}}$
+        \end{itemize}
+        \item $r_{middle}=$ la región en $c$ de $r$
+        \begin{itemize}
+            \item $r_{middle}=r_{c_{14}yc_{15}}$
+        \end{itemize}
+        \item $r_{down}=$ la región debajo de $c$ de $r$
+        \begin{itemize}
+            \item $r_{down}=r_{c_{14}}$
+        \end{itemize}
+        \item Quitar $r=r_{c_14}$ de $\mathcal{L}$.
+        \begin{itemize}
+            \item $\mathcal{L}-r_{c_{14}}=\{r_{0}, r_{0}, r_{c_{11}}, r_{c_{6}yc_{11}}, r_{c_{5}c_{6}yc_{11}}, r_{c_5yc_6}, r_{c_5}, r_{c_{4}yc_{6}}, r_{c_{4}}, r_0\}$ 
+        \end{itemize}
+        \item Insertar $r_{up}$, $r_{middle}$, $r_{down}$ en $\mathcal{L}$
+        \begin{itemize}
+            \item $\mathcal{L}=\mathcal{L}\cup\{r_{c_{14}}, r_{c_{14}yc_{15}}, r_{c_{14}}\}$
+        \end{itemize}
+        \item $C_{r_{up}} = C_{r_{down}} = C_r$
+        \begin{itemize}
+            \item $C_{r_{up}} = C_{r_{down}} = C_r=\{c_{14}\}$
+        \end{itemize}
+        \item $C_{r_{middle}} = C_r \cup \{c_{15}\}$
+        \begin{itemize}
+            \item $C_{r_{middle}} = \{c_{14}\} \cup \{c_{15}\}=\{c_{14}, c_{15}\}$
+        \end{itemize}
+        \item Si $c_{15}$ intersecta el arco circular que limita por arriba a $r_{up}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item $c_{15}$ intersecta a $c_{14}$
+            \item $Q=Q\cup \{(7.6667, 6.4944,int,c_{14y15})\}$
+        \end{itemize}
+        \item Si $c_15$ intersecta el arco circular que limita por abajo a $r_{down}$, entonces inserta este punto de intersección en $Q$
+        \begin{itemize}
+            \item $c_{15}$ intersecta a $c_{14}$
+            \item $Q=Q\cup \{(7.6667, 1.5056,int,c_{14y15})\}$
+        \end{itemize}
+        \item Fin
+    \end{enumerate}
+\end{enumerate}
+
+
+\vspace{1.5em} 
+Al final del Paso 8 tenemos:
+
+\begin{equation}
+\begin{aligned}
+Q 
+    &= \{ (0, 17, \text{izq}, c_5), (1, 11, \text{izq}, c_{11}), (1, 23, \text{izq}, c_{4}), (2.2224, 13.4167, \text{int}, c_{5y11}), (2.2224, 20.5833, \text{int}, c_{4y5}), \\ 
+    &\qquad  (2.5, 17, \text{izq}, c_{6}), (3, 4, \text{izq}, c_{14}), (3.6630, 13.9810, \text{int}, c_{6y11}), (3.6630, 20.0190, \text{int}, c_{4y6}), (4.7917, 13.0791, \text{int}, c_{5y6}), (4.7917, 20.9209, \text{int}, c_{5y6}), (5, 4, \text{izq}, c_{15}),   \\
+    &\qquad (5.7776, 13.4167, \text{int}, c_{5y11}),(5.7776, 20.5833, \text{int}, c_{4y5}), (6, 30.5, \text{izq}, c_{1}), (7, 11, \text{der}, c_{11}), (7, 23, \text{der}, c_{4}),  \\
+    &\qquad (7.5, 30.5, \text{izq}, c_{2}), (7.6667, 1.5056,int,c_{14y15}), (7.6667, 6.4944,int,c_{14y15}), (8, 17, \text{der}, c_5), (9, 4, \text{der}, c_{14}), (9, 17, \text{ent}, p_{2}),  (9.5, 17, \text{izq}, c_{7}), (10, 9, \text{izq}, c_{12}), (11, 5, \text{ent}, p_{6}),   \\
+    &\qquad (11.5, 17, \text{der}, c_6), (12, 15, \text{izq}, c_{8}), (13, 5, \text{izq}, c_{16}), (13, 9, \text{izq}, c_{13}), (13, 24, \text{izq}, c_{3}), (14, 30.5, \text{ent}, p_{1}), \\
+    &\qquad (18, 9.5, \text{ent}, p_{5}), (18, 20, \text{ent}, p_{3}), (24, 19, \text{izq}, c_{9}), (27, 17, \text{izq}, c_{10}), (28,18, \text{ent}, p_{4}) \}\\
+A_c
+    &=C=\{c_1, c_2, c_3, c_4, c_5, c_6, c_7, c_8, c_9, c_{10}, c_{11}, c_{12}, c_{13}, c_{14}, c_{15}, c_{16}\}\\
+\mathcal{L}
+    &=\{r_{0}, r_{c_{14}}, r_{c_{14}yc_{15}}, r_{c_{14}}, r_{0}, r_{c_{11}}, r_{c_{6}yc_{11}}, r_{c_{5}c_{6}yc_{11}}, r_{c_5yc_6}, r_{c_5}, r_{c_{4}yc_{6}}, r_{c_{4}}, r_0\}
+\end{aligned}
+\end{equation}
+}
+\newpage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsubsection{Código en python}
+
+
+
+
+
+
+
+
+
+% \begin{theorem}
+% Sea $f$ una función continua en $[a,b]$. Entonces...
+% \end{theorem}
+
+
+
+% \begin{example}
+% El número 7 es primo.
+% \end{example}
+
+% \begin{remark}
+% Esta nota explica un detalle adicional.
+% \end{remark}
+
+% \begin{warning}
+% ¡Cuidado! Este resultado solo aplica si $n > 0$.
+% \end{warning}
+
+
+
+
+
+% Esto es un ejemplo de una cita \citep{Stuart2018}. 
+
+
+% En emacs las lineas de abajo permiten compilar desde un archivo de capitulo
+% ver: TeX-master-file-ask
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../maestria"
+%%% End:
